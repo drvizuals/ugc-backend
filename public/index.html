@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UGC Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#060608;--paper:#0d0d10;--lift:#13131a;--edge:#1f1f2e;--edge2:#2a2a3e;
+  --gold:#e8b84b;--ice:#4be8c8;--ice-dim:#0f3a30;
+  --red:#e84b4b;--green:#4bdb8a;--txt:#d0cce0;--mute:#55526a;
+  --mono:'Space Mono',monospace;--display:'Bebas Neue',sans-serif;
+}
+body{background:var(--ink);color:var(--txt);font-family:var(--mono);font-size:13px;padding:20px 16px 80px;max-width:600px;margin:0 auto}
+h1{font-family:var(--display);font-size:36px;letter-spacing:2px;color:#fff;margin-bottom:4px}
+h1 em{color:var(--gold);font-style:normal}
+.sub{font-size:9px;letter-spacing:3px;color:var(--mute);text-transform:uppercase;margin-bottom:24px}
+.panel{background:var(--paper);border:1px solid var(--edge);border-radius:3px;padding:16px;margin-bottom:16px}
+.plbl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:block}
+.fld{margin-bottom:10px}
+.fld label{display:block;font-size:9px;letter-spacing:1.5px;color:var(--mute);text-transform:uppercase;margin-bottom:4px}
+.fld input{width:100%;background:var(--ink);border:1px solid var(--edge2);color:var(--txt);font-family:var(--mono);font-size:12px;padding:9px 11px;border-radius:2px;outline:none}
+.fld input:focus{border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border:none;border-radius:2px;cursor:pointer;margin-right:8px;margin-bottom:8px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#000;font-weight:700}
+.btn-green{background:var(--green);color:#000;font-weight:700}
+.btn-ghost{background:transparent;border:1px solid var(--edge2);color:var(--mute)}
+.log{background:var(--ink);border:1px solid var(--edge);border-radius:3px;padding:12px;font-size:11px;line-height:1.8;max-height:140px;overflow-y:auto;margin-bottom:16px;display:none}
+.lr{display:flex;gap:10px}
+.lt{color:var(--mute);min-width:56px;font-size:10px;flex-shrink:0}
+.lm{color:var(--txt)}
+.lm.gold{color:var(--gold)}.lm.ice{color:var(--ice)}.lm.red{color:var(--red)}.lm.green{color:var(--green)}.lm.mute{color:var(--mute)}
+.lead{border:1px solid var(--edge);border-radius:3px;padding:14px;margin-bottom:10px;position:relative}
+.lead.approved{border-color:var(--ice)}
+.lead.rejected{opacity:.35}
+.lead.sent{border-color:var(--green)}
+.lname{font-family:var(--display);font-size:18px;color:#fff;margin-bottom:6px}
+.lmeta{font-size:10px;color:var(--mute);margin-bottom:8px}
+.lemail{color:var(--gold)}
+.score{font-size:10px;color:var(--mute);margin-bottom:4px}
+.sbar{height:2px;background:var(--edge);border-radius:1px;overflow:hidden;margin-bottom:6px}
+.sfill{height:100%;border-radius:1px}
+.reason{font-size:10px;color:var(--mute);font-style:italic;margin-bottom:10px}
+.esubj{color:var(--gold);font-size:11px;font-weight:700;margin-bottom:6px}
+.ebody{font-size:11px;color:#aaa;white-space:pre-wrap;background:var(--ink);border:1px solid var(--edge);border-radius:2px;padding:10px;margin-bottom:10px;min-height:80px}
+.ebody[contenteditable]{outline:none;border-color:var(--gold)}
+.actions{display:flex;gap:8px}
+.la{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:5px 9px;border-radius:2px;cursor:pointer;border:none}
+.la-app{background:var(--ice-dim);color:var(--ice)}
+.la-rej{background:#1a0a0a;color:var(--red)}
+.sent-tag{position:absolute;top:14px;right:14px;font-size:9px;letter-spacing:2px;color:var(--green);text-transform:uppercase}
+.tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:2px 6px;border-radius:2px;margin-right:4px}
+.t-saas{background:#12103a;color:#8899ff;border:1px solid #1e1b55}
+.t-app{background:#0e2820;color:var(--ice);border:1px solid #154030}
+.t-ai-tool{background:#0d1a1a;color:#4bffe8;border:1px solid #154040}
+.t-hot{background:#2a1500;color:var(--gold);border:1px solid #5a3000}
+.success{background:#051305;border:1px solid #1a4a1a;border-radius:3px;padding:20px;color:var(--green);text-align:center;margin-bottom:16px;display:none}
+.success strong{font-family:var(--display);font-size:28px;display:block;letter-spacing:2px}
+.err{background:#130505;border:1px solid #3a0f0f;border-radius:3px;padding:10px;color:var(--red);font-size:11px;margin-bottom:14px;display:none}
+.spin{display:inline-block;width:9px;height:9px;border:1.5px solid transparent;border-top-color:currentColor;border-radius:50%;animation:rot .5s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+#approvedBar{margin-bottom:16px;font-size:11px;color:var(--mute)}
+#approvedBar span{color:var(--ice)}
+</style>
+</head>
+<body>
+
+<h1>UGC<em>.</em>PIPELINE</h1>
+<div class="sub">Railway + Resend &middot; Tech &amp; Apps Only</div>
+
+<div class="panel">
+  <span class="plbl">Your Info</span>
+  <div class="fld"><label>Your Name</label><input id="name" placeholder="Daniel Rua" value="Daniel Rua"></div>
+  <div class="fld"><label>Portfolio URL</label><input id="portfolio" placeholder="https://danielrua.my.canva.site/" value="https://danielrua.my.canva.site/"></div>
+</div>
+
+<div style="margin-bottom:16px">
+  <button class="btn btn-gold" onclick="runPipeline()">Run Pipeline</button>
+  <button class="btn btn-ghost" onclick="approveAll()" id="approveAllBtn" style="display:none">Approve All</button>
+  <button class="btn btn-green" onclick="sendAll()" id="sendBtn" style="display:none">Send Approved</button>
+</div>
+
+<div class="err" id="errBox"></div>
+<div class="success" id="successBox"><strong id="successCount"></strong>Emails sent via Resend &middot; Check resend.com/emails</div>
+<div class="log" id="logBox"></div>
+<div id="approvedBar" style="display:none"><span id="approvedCount">0</span> approved &middot; <span id="sentCount">0</span> sent</div>
+<div id="leadsContainer"></div>
+
+<script>
+var RAILWAY_URL = window.location.origin;
+
+var LEADS = [
+  { company:"Notion", category:"saas", contactEmail:"ugc@makenotion.com", contactHandle:null, needsContent:"App walkthrough videos", postedRecently:true, score:9, scoreReason:"Active UGC program, clear brief, direct email available" },
+  { company:"Captions AI", category:"ai-tool", contactEmail:null, contactHandle:"@captionsapp", needsContent:"AI video editing demos", postedRecently:true, score:9, scoreReason:"Perfect niche match for a filmmaker, actively recruiting" },
+  { company:"Superhuman", category:"app", contactEmail:"creators@superhuman.com", contactHandle:"@superhuman", needsContent:"Testimonials from power users", postedRecently:true, score:8, scoreReason:"Direct email, paid opportunity, strong product fit" },
+  { company:"Runway ML", category:"ai-tool", contactEmail:"ugc@runwayml.com", contactHandle:null, needsContent:"Creation showcase and before/after", postedRecently:true, score:8, scoreReason:"AI video tool — ideal match for a filmmaker" },
+  { company:"Loom", category:"saas", contactEmail:null, contactHandle:"@loom_partnerships", needsContent:"Async video use-case demos", postedRecently:true, score:8, scoreReason:"Video-first product, perfect for a filmmaker" },
+  { company:"Perplexity AI", category:"ai-tool", contactEmail:"partnerships@perplexity.ai", contactHandle:null, needsContent:"Real workflow and use case demos", postedRecently:true, score:7, scoreReason:"Growing fast, email available" },
+  { company:"Beehiiv", category:"saas", contactEmail:null, contactHandle:"@beehiiv", needsContent:"Dashboard and feature walkthrough", postedRecently:true, score:7, scoreReason:"Strong creator community" },
+  { company:"Descript", category:"saas", contactEmail:"ugc@descript.com", contactHandle:null, needsContent:"Screen recording and commentary", postedRecently:false, score:7, scoreReason:"Video editing tool — natural fit" },
+  { company:"Arc Browser", category:"app", contactEmail:null, contactHandle:"@arcinternet", needsContent:"Lifestyle and workflow content", postedRecently:true, score:6, scoreReason:"Open brief, creative-friendly brand" },
+  { company:"Otter.ai", category:"ai-tool", contactEmail:null, contactHandle:"@otter_ai", needsContent:"Before and after productivity demos", postedRecently:false, score:6, scoreReason:"Solid AI tool with clear UGC use case" },
+  { company:"Framer", category:"saas", contactEmail:"hello@framer.com", contactHandle:null, needsContent:"Raw tool demo and site building", postedRecently:false, score:6, scoreReason:"Creative tool with email contact" },
+  { company:"Linear", category:"saas", contactEmail:null, contactHandle:"@linear", needsContent:"Workflow and team management demos", postedRecently:false, score:5, scoreReason:"Developer-focused, growing creator program" },
+];
+
+var decisions = {};
+var sentSet = {};
+var builtLeads = [];
+
+function ts() { return new Date().toLocaleTimeString("en-US",{hour12:false}); }
+
+function addLog(msg, type) {
+  var box = document.getElementById("logBox");
+  box.style.display = "block";
+  var row = document.createElement("div");
+  row.className = "lr";
+  row.innerHTML = '<span class="lt">'+ts()+'</span><span class="lm '+(type||"mute")+'">'+msg+'</span>';
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showErr(msg) {
+  var b = document.getElementById("errBox");
+  b.textContent = msg;
+  b.style.display = msg ? "block" : "none";
+}
+
+function scoreColor(s) {
+  return s >= 8 ? "var(--ice)" : s >= 6 ? "var(--gold)" : "var(--mute)";
+}
+
+function tagCls(c) {
+  return {saas:"t-saas",app:"t-app","ai-tool":"t-ai-tool"}[c] || "t-saas";
+}
+
+function buildEmail(lead) {
+  var n = document.getElementById("name").value || "Daniel";
+  var p = document.getElementById("portfolio").value || "https://danielrua.my.canva.site/";
+  var s = {
+    "Notion": { subject:"UGC collab — "+n+" x Notion", body:"Hey Notion team,\n\nI'm "+n+", a UGC filmmaker and photographer who creates content for tech and app brands. I came across your UGC program and I'd love to create authentic app walkthrough videos that show real workflows — no ads-y feel, just genuine storytelling.\n\nPortfolio: "+p+"\n\nWould love to connect if you're still looking for creators.\n\n"+n },
+    "Captions AI": { subject:n+" — UGC filmmaker interested in Captions AI", body:"Hi Captions team,\n\nI'm "+n+", a bilingual filmmaker who creates UGC for tech brands. Captions AI is exactly the kind of product I love making content for — I can show the real editing workflow, captions in action, and b-roll features in a way that feels authentic.\n\nPortfolio: "+p+"\n\nOpen to a collab whenever you're ready.\n\n"+n },
+    "Superhuman": { subject:"UGC creator interested in Superhuman collab", body:"Hey Superhuman team,\n\nSaw you're looking for power-user testimonials — I'm "+n+", a UGC filmmaker who creates content for tech brands daily. I know how to make authentic content that actually converts.\n\nPortfolio: "+p+"\n\nWould love to be part of this.\n\n"+n },
+    "Runway ML": { subject:n+" x Runway — UGC filmmaker", body:"Hi Runway team,\n\nI'm "+n+", a filmmaker who creates UGC for tech and AI brands. Runway is a product I genuinely use — I can create before/after content and creation showcases that feel real, not produced.\n\nPortfolio: "+p+"\n\nLet me know if you're open to a collab.\n\n"+n },
+    "Loom": { subject:n+" — UGC creator for Loom", body:"Hey Loom team,\n\nI'm "+n+", a bilingual UGC filmmaker. Loom is a product I use constantly — I can create authentic async video demos that show real team workflows, not scripted ads.\n\nPortfolio: "+p+"\n\nOpen to connecting.\n\n"+n },
+  };
+  if (s[lead.company]) return s[lead.company];
+  return {
+    subject: n+" — UGC filmmaker interested in "+lead.company,
+    body: "Hi "+lead.company+" team,\n\nI'm "+n+", a bilingual UGC filmmaker and photographer specializing in "+lead.needsContent.toLowerCase()+" for tech and app brands. I create content that feels authentic — not polished ads.\n\nPortfolio: "+p+"\n\nWould love to connect about a collab.\n\n"+n
+  };
+}
+
+function updateBar() {
+  var approved = Object.values(decisions).filter(function(v){return v==="approved";}).length;
+  var sent = Object.keys(sentSet).length;
+  document.getElementById("approvedCount").textContent = approved;
+  document.getElementById("sentCount").textContent = sent;
+  document.getElementById("approvedBar").style.display = approved > 0 ? "block" : "none";
+  var sendBtn = document.getElementById("sendBtn");
+  sendBtn.style.display = approved > 0 ? "inline-flex" : "none";
+  sendBtn.textContent = "Send "+approved+" via Railway";
+}
+
+function renderLeads() {
+  var container = document.getElementById("leadsContainer");
+  container.innerHTML = "";
+  builtLeads.forEach(function(lead, i) {
+    var d = decisions[i] || "";
+    var isSent = !!sentSet[i];
+    var cls = "lead" + (isSent?" sent":d?" "+d:"");
+    var sc = lead.score || 0;
+
+    var div = document.createElement("div");
+    div.className = cls;
+    div.id = "lead-"+i;
+
+    div.innerHTML =
+      (isSent ? '<span class="sent-tag">✓ SENT</span>' : "") +
+      '<div class="lname">'+lead.company+'</div>'+
+      '<div class="lmeta">'+
+        (lead.postedRecently?'<span class="tag t-hot">Recent</span>':"")+
+        '<span class="tag '+tagCls(lead.category)+'">'+lead.category+'</span> '+
+        (lead.contactEmail?'<span class="lemail">'+lead.contactEmail+'</span>':"")+
+        (lead.contactHandle?' '+lead.contactHandle:"")+
+      '</div>'+
+      '<div class="score">'+sc+'/10</div>'+
+      '<div class="sbar"><div class="sfill" style="width:'+(sc*10)+'%;background:'+scoreColor(sc)+'"></div></div>'+
+      '<div class="reason">'+lead.scoreReason+'</div>'+
+      '<div class="esubj">Subject: '+lead.email.subject+'</div>'+
+      '<div class="ebody" id="body-'+i+'" '+(d==="approved"&&!isSent?'contenteditable="true"':'')+'>'+lead.email.body+'</div>'+
+      (!isSent ?
+        '<div class="actions">'+
+          (d!=="approved"?'<button class="la la-app" onclick="decide('+i+',\'approved\')">Approve</button>':"")+
+          (d!=="rejected"?'<button class="la la-rej" onclick="decide('+i+',\'rejected\')">Reject</button>':"")+
+          (d==="approved"?'<span style="font-size:10px;color:var(--ice);margin-left:auto">Edit body above if needed</span>':"")+
+        '</div>'
+      : "");
+
+    container.appendChild(div);
+  });
+}
+
+function decide(i, verdict) {
+  decisions[i] = verdict;
+  addLog((verdict==="approved"?"Approved: ":"Rejected: ")+builtLeads[i].company, verdict==="approved"?"ice":"red");
+  renderLeads();
+  updateBar();
+}
+
+function approveAll() {
+  builtLeads.forEach(function(_, i){ if(!sentSet[i]) decisions[i]="approved"; });
+  addLog("Approved all leads", "ice");
+  renderLeads();
+  updateBar();
+}
+
+function runPipeline() {
+  decisions = {}; sentSet = {}; builtLeads = [];
+  document.getElementById("leadsContainer").innerHTML = "";
+  document.getElementById("logBox").innerHTML = "";
+  document.getElementById("logBox").style.display = "none";
+  document.getElementById("successBox").style.display = "none";
+  showErr("");
+
+  addLog("Loading "+LEADS.length+" curated leads...", "gold");
+  setTimeout(function(){addLog("QUALIFY — scoring leads...", "mute");}, 300);
+  setTimeout(function(){addLog("DRAFT — writing emails...", "mute");}, 700);
+  setTimeout(function(){
+    builtLeads = LEADS.map(function(lead){ return Object.assign({}, lead, {email: buildEmail(lead)}); });
+    addLog("Ready — "+builtLeads.length+" leads scored and drafted", "ice");
+    addLog("Approve leads below then hit Send", "gold");
+    document.getElementById("approveAllBtn").style.display = "inline-flex";
+    renderLeads();
+    updateBar();
+  }, 1200);
+}
+
+async function sendAll() {
+  var toSend = builtLeads.map(function(lead,i){return {lead:lead,i:i};})
+    .filter(function(x){return decisions[x.i]==="approved" && !sentSet[x.i];});
+  if (toSend.length === 0) return;
+
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("sendBtn").innerHTML = '<span class="spin"></span> Sending...';
+  addLog("Sending "+toSend.length+" emails via Railway...", "gold");
+  addLog("Safe to keep this tab open", "mute");
+
+  var emails = toSend.map(function(item){
+    var lead = item.lead;
+    var i = item.i;
+    var bodyEl = document.getElementById("body-"+i);
+    var body = bodyEl ? bodyEl.innerText || bodyEl.textContent : lead.email.body;
+    var toAddr = lead.contactEmail || ("hello@"+lead.company.toLowerCase().replace(/[^a-z0-9]/g,"")+".com");
+    return { to:toAddr, subject:lead.email.subject, body:body, company:lead.company };
+  });
+
+  try {
+    var res = await fetch(RAILWAY_URL+"/send-batch", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({emails:emails})
+    });
+    if (!res.ok) throw new Error("Server error "+res.status);
+    var data = await res.json();
+
+    toSend.forEach(function(item){ sentSet[item.i] = true; });
+    renderLeads();
+    updateBar();
+
+    var sb = document.getElementById("successBox");
+    document.getElementById("successCount").textContent = data.summary.sent+" EMAILS SENT ";
+    sb.style.display = "block";
+    addLog("Done — "+data.summary.sent+" sent, "+data.summary.failed+" failed", "green");
+
+    if (data.results) {
+      data.results.forEach(function(r){ if(!r.success) addLog("Failed: "+r.company+" — "+r.error, "red"); });
+    }
+
+  } catch(e) {
+    showErr("Send failed: "+e.message);
+    addLog("Error: "+e.message, "red");
+  }
+
+  document.getElementById("sendBtn").disabled = false;
+  document.getElementById("sendBtn").textContent = "Send Approved";
+}
+</script>
+</body>
+</html>
